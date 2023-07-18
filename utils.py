@@ -174,19 +174,13 @@ async def edit_comment(account_id: int, channel_id: int, message_id: int, new_co
     )
 
 async def remove_account(account_path: str, owner_id: int):
-
     remove_accounts(
         user_id=owner_id,
         account_path=account_path
     )
-
-
     try:
-
         shutil.rmtree(account_path)
-    
     except:
-        
         os.remove(account_path)
 
 async def split_run_task(accounts: list[str], type: str, owner_id: int):

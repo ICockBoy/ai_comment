@@ -330,24 +330,6 @@ class ClientsAPI:
                 api.lang_pack = 'ru-RU'
                 api.system_lang_code = 'ru-RU'
 
-                # proxy = {
-                #     "proxy_type": "socks5",
-                #     "addr": "lproxy.site",
-                #     "port": 14295,
-                #     "username": "bmo",
-                #     "password": "123456",
-                #     "rdns": True
-                # }
-
-                # proxy = {
-                #     "proxy_type": "socks5",
-                #     "addr": "145.249.253.32",
-                #     "port": 52059,
-                #     "username": "pr34serv1mart",
-                #     "password": "Ki49Fad2",
-                #     "rdns": True
-                # }
-
                 proxy = {
                     "proxy_type": "socks5",
                     "addr": "185.241.192.80",
@@ -356,15 +338,6 @@ class ClientsAPI:
                     "password": "PUh9edgAq9Ap",
                     "rdns": True
                 }
-
-                # proxy = {
-                #     "proxy_type": "http",
-                #     "addr": "cproxy.site",
-                #     "port": 14295,
-                #     "username": "bmo",
-                #     "password": "123456",
-                #     "rdns": True
-                # }
 
                 client = TelegramClient(
                     session=session,

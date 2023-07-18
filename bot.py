@@ -154,7 +154,7 @@ async def support_send_answer(message: types.Message, state: FSMContext):
         for admin in ADMINS:
             if admin != message.chat.id:
                 await bot.send_message(chat_id=admin,
-                                       text=f"Один из админов ответил на вопрос: "
+                                       text=f"на вопрос пользователя [{rtm.split('[')[1].split(']')[0]}]: {rtm.split(', ответьте на это сообщение, чтобы переслать его пользователю')[-1]}\n\nОдин из админов ответил следующее: {message.text}")
         await message.reply("Ваше сообщение отправлено")
 
 

@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from opentele.tl import TelegramClient
 from opentele.api import API, UseCurrentSession
 
@@ -41,6 +42,7 @@ class CommentsAPI:
 
         self.clients_owners = {}
         self.clients_ids = {}
+        self.clients_phones = {}
 
         self.cache = dbm.open('comments_cache/comments_cache', 'c')
 
@@ -52,11 +54,11 @@ class CommentsAPI:
 
     def _run_polling(self):
         self.loop.run_until_complete(self._polling_processing())
-    
+
     def _write_comment_cache(self, owner_id: int, channel_id: int, dt: int):
 
         self.cache[f'{owner_id}|{channel_id}|{dt}'] = '1'
-    
+
     def _collect_comment(self, owner_id: int, channel_id: int) -> str:
 
         for key in self.cache.keys():
@@ -69,7 +71,7 @@ class CommentsAPI:
 
         if not comment_row:
             return True
-        
+
         _, _, dt = comment_row.split('|')
         dt = int(dt)
 
@@ -79,10 +81,10 @@ class CommentsAPI:
 
         if now - dt > 86400:
             return True
-        
+
         else:
             return False
-    
+
     async def get_clients_by_owner(self, owner_id: int) -> list[TelegramClient]:
 
         results = []
@@ -90,35 +92,49 @@ class CommentsAPI:
         for client, client_owner_id in self.clients_owners.items():
             if owner_id == client_owner_id:
                 results.append(client)
-        
+
         return results
 
     async def is_channel_private(self, channel_link: str) -> bool:
-
         if '+' in channel_link:
             return True
-    
+
+    async def check_account(self, client):
+        try:
+            me = await client.get_me()
+            if not me:
+                remove_accounts(self.clients_owners[client], "accounts/tl/" + self.clients_phones[client])
+                await self._close_client(self.clients_phones[client])
+                await self.bot.send_message(
+                    chat_id=self.clients_owners[client],
+                    text=f'Аккаунт <b>{self.clients_phones[client]}</b> удален', )
+                return False
+        except:
+            remove_accounts(self.clients_owners[client], "accounts/tl/" + self.clients_phones[client])
+            await self._close_client(self.clients_phones[client])
+            await self.bot.send_message(
+                chat_id=self.clients_owners[client],
+                text=f'Аккаунт <b>{self.clients_phones[client]}</b> удален', )
+            return False
+        else:
+            return True
+
     async def leave_channel(self, phone: str, owner_id: int, channel_id: int):
-        
+
         clients = await self.get_clients_by_owner(owner_id)
 
         for client in clients:
 
-            try:
-                me = await client.get_me()
-                
-                if not me:
-                    continue
-
-            except:
+            if not await self.check_account(client):
                 continue
+            me = await client.get_me()
 
             if me.phone == phone:
 
-                channel = [dialog.id async for dialog in client.iter_dialogs(limit=None) if dialog.is_channel == True and dialog.id == channel_id]
+                channel = [dialog.id async for dialog in client.iter_dialogs(limit=None) if
+                           dialog.is_channel == True and dialog.id == channel_id]
 
                 if channel:
-
                     channel = channel[0]
                     await client.delete_dialog(channel)
 
@@ -127,35 +143,26 @@ class CommentsAPI:
                         text=f'Аккаунт <b>{me.phone}</b> отписался от канала <b>{channel}</b>'
                     )
 
-                return                 
-    
+                return
+
     async def get_account_info(self, phone: str, owner_id: int) -> dict:
-
         clients = await self.get_clients_by_owner(owner_id)
-
         for client in clients:
-
-            try:
-                me = await client.get_me()
-                
-                if not me:
-                    continue
-
-            except:
+            if not await self.check_account(client):
                 continue
-
+            me = await client.get_me()
             if me.phone == phone:
-
                 me_full = await client(functions.users.GetFullUserRequest(me))
-
                 username = me.username
                 about = me_full.full_user.about
-                photo = await client.download_profile_photo(entity='me', file=f'temp/{random.randint(0, 9999999999)}.jpg')
-
+                photo = await client.download_profile_photo(entity='me',
+                                                            file=f'temp/{random.randint(0, 9999999999)}.jpg')
                 first_name = me.first_name
                 last_name = me.last_name
-
-                channels = [dialog.name async for dialog in client.iter_dialogs(limit=None) if dialog.is_channel == True]
+                channels = []
+                async for dialog in client.iter_dialogs(limit=None):
+                    if dialog.is_channel:
+                        channels.append(dialog.name)
 
                 return {
                     "username": username,
@@ -168,86 +175,50 @@ class CommentsAPI:
                 }
 
     async def get_channels_data(self, phone: str, owner_id: int) -> list[dict]:
-
         clients = await self.get_clients_by_owner(owner_id)
-
         for client in clients:
-
-            try:
-                me = await client.get_me()
-                
-                if not me:
-                    continue
-
-            except:
+            if not await self.check_account(client):
                 continue
-
+            me = await client.get_me()
             if me.phone == phone:
-
-                channels = [{"name": dialog.name, "id": dialog.id} async for dialog in client.iter_dialogs(limit=None) if dialog.is_channel == True]
-
+                channels = [{"name": dialog.name, "id": dialog.id} async for dialog in client.iter_dialogs(limit=None)
+                            if dialog.is_channel == True]
                 return channels
-    
+
     async def get_accounts_info(self, owner_id: int) -> list[dict]:
-
         clients = await self.get_clients_by_owner(owner_id)
-
         results = []
-
         for client in clients:
-
-            try:
-                me = await client.get_me()
-
-                if not me:
-                    continue
-
-            except:
+            if not await self.check_account(client):
                 continue
-
+            me = await client.get_me()
             results.append({
                 "phone": me.phone,
                 "first_name": me.first_name,
                 "last_name": me.last_name
             })
-        
         return results
-    
+
     async def update_bio(self, phone: str, bio: str, owner_id: int):
-
         clients = await self.get_clients_by_owner(owner_id)
-
         for client in clients:
-
-            try:
-                me = await client.get_me()
-
-                if not me:
-                    continue
-
-            except:
-                continue
-
+            if not await self.check_account(client):
+                return
+            me = await client.get_me()
             if me.phone != phone:
                 continue
-
             try:
-
                 await client(functions.account.UpdateProfileRequest(
                     first_name=me.first_name,
                     last_name=me.last_name,
                     about=bio
                 ))
-
                 me_full = await client(functions.users.GetFullUserRequest(me))
-
                 await self.bot.send_message(
                     chat_id=owner_id,
                     text=f'Аккаунт <b>{me.phone}</b> обновил описание'
                 )
-            
             except Exception as e:
-
                 print(f'Аккаунт {me.phone} не смог обновить описание: {e}')
 
                 await self.bot.send_message(
@@ -256,21 +227,15 @@ class CommentsAPI:
                 )
 
             return
-    
+
     async def update_last_name(self, phone: str, last_name: str, owner_id: int):
 
         clients = await self.get_clients_by_owner(owner_id)
 
         for client in clients:
-
-            try:
-                me = await client.get_me()
-
-                if not me:
-                    continue
-
-            except:
-                continue
+            if not await self.check_account(client):
+                return
+            me = await client.get_me()
 
             if me.phone != phone:
                 continue
@@ -283,7 +248,7 @@ class CommentsAPI:
                     chat_id=owner_id,
                     text=f'Аккаунт <b>{me.phone}</b> обновил Фамилию'
                 )
-            
+
             except Exception as e:
 
                 print(f'Аккаунт {me.phone} не смог обновить фамилию: {e}')
@@ -296,41 +261,25 @@ class CommentsAPI:
             return
 
     async def update_username(self, phone: str, username: str, owner_id: int):
-
         clients = await self.get_clients_by_owner(owner_id)
-
         for client in clients:
-
-            try:
-                me = await client.get_me()
-
-                if not me:
-                    continue
-
-            except:
-                continue
-
+            if not await self.check_account(client):
+                return
+            me = await client.get_me()
             if me.phone != phone:
                 continue
-
             try:
-
                 await client(functions.account.UpdateUsernameRequest(username=username))
-
                 await self.bot.send_message(
                     chat_id=owner_id,
                     text=f'Аккаунт <b>{me.phone}</b> обновил Юзернейм '
                 )
-
             except Exception as e:
-
                 print(f'Аккаунт {me.phone} не смог обновить юзернейм: {e}')
-
                 await self.bot.send_message(
                     chat_id=owner_id,
                     text=f'Аккаунт <b>{me.phone}</b> не смог обновить юзернейм'
                 )
-
             return
 
     async def update_first_name(self, phone: str, first_name: str, owner_id: int):
@@ -338,16 +287,9 @@ class CommentsAPI:
         clients = await self.get_clients_by_owner(owner_id)
 
         for client in clients:
-
-            try:
-                me = await client.get_me()
-
-                if not me:
-                    continue
-
-            except:
-                continue
-
+            if not await self.check_account(client):
+                return
+            me = await client.get_me()
             if me.phone != phone:
                 continue
 
@@ -359,7 +301,7 @@ class CommentsAPI:
                     chat_id=owner_id,
                     text=f'Аккаунт <b>{me.phone}</b> обновил Имя '
                 )
-            
+
             except Exception as e:
 
                 print(f'Аккаунт {me.phone} не смог обновить имя: {e}')
@@ -370,18 +312,15 @@ class CommentsAPI:
                 )
 
             return
-    
+
     async def update_profile_photo(self, phone: str, photo_path: str, owner_id: int):
 
         clients = await self.get_clients_by_owner(owner_id)
 
         for client in clients:
-
-            try:
-                me = await client.get_me()
-            except:
+            if not await self.check_account(client):
                 continue
-
+            me = await client.get_me()
             if me.phone != phone:
                 continue
 
@@ -394,7 +333,7 @@ class CommentsAPI:
                     chat_id=owner_id,
                     text=f'Аккаунт <b>{me.phone}</b> обновил аватарку'
                 )
-            
+
             except Exception as e:
 
                 print(f'Аккаунт {me.phone} не смог обновить аватарку: {e}')
@@ -405,18 +344,15 @@ class CommentsAPI:
                 )
 
             return
-    
+
     async def check_spam_block(self, phone: str, owner_id: int) -> bool:
-        
+
         clients = await self.get_clients_by_owner(owner_id)
 
         for client in clients:
-
-            try:
-                me = await client.get_me()
-            except:
+            if not await self.check_account(client):
                 continue
-
+            me = await client.get_me()
             if me.phone != phone:
                 continue
 
@@ -433,37 +369,33 @@ class CommentsAPI:
 
                 if 'свободен от' in m.message or 'no limits' in m.message:
                     status = False
-                
+
                 return status
-            
+
             except Exception as e:
                 print(e)
-    
+
     async def is_channel_sub_unique(self, owner_id: int, link: str) -> bool:
 
         clients = await self.get_clients_by_owner(owner_id)
         results = []
 
         for client in clients:
-
             channel_data = await client.get_entity(link)
             results.append(channel_data.left)
-        
+
         return all(results)
 
     async def join_channels(self, phone: str, channels: list[str], owner_id: int):
-        
+
         clients = await self.get_clients_by_owner(owner_id)
 
         for channel in channels:
 
             for client in clients:
-                
-                try:
-                    me = await client.get_me()
-                except:
-                    continue
-
+                if not await self.check_account(client):
+                    return None
+                me = await client.get_me()
                 if me.phone != phone:
                     continue
 
@@ -474,7 +406,7 @@ class CommentsAPI:
                     if is_private == True:
 
                         await client(functions.messages.ImportChatInviteRequest(hash=channel.split('+')[-1]))
-                    
+
                     else:
 
                         status = await self.is_channel_sub_unique(
@@ -484,17 +416,17 @@ class CommentsAPI:
 
                         if status:
                             await client(functions.channels.JoinChannelRequest(channel=channel))
-                        
+
                         else:
                             continue
-                    
+
                     await self.bot.send_message(
                         chat_id=owner_id,
                         text=f'Аккаунт <b>{me.phone}</b> подписался на канал <b>{channel}</b>'
                     )
 
                     await asyncio.sleep(30)
-                
+
                 except Exception as e:
 
                     print(f'Аккаунт {me.phone} не смог подписаться на канал {channel}: {e}')
@@ -508,7 +440,7 @@ class CommentsAPI:
             chat_id=owner_id,
             text=f'Аккаунт <b>{me.phone}</b> подписался на <b>{len(channels)}</b> каналов'
         )
-    
+
     async def get_channel_uname(self, client: TelegramClient, channel_id: int) -> str:
 
         try:
@@ -520,8 +452,28 @@ class CommentsAPI:
         except:
 
             return None
-    
+
     async def _run_listener(self, client: TelegramClient):
+
+        def get_user_channel_comments():
+            try:
+                with open("comments_time.json", "r") as f:
+                    return json.loads(f.read())
+            except:
+                return {}
+
+        def get_user_channel_comment_time(chat_id, client_id):
+            try:
+                user_channel_comments = get_user_channel_comments()
+                return datetime.fromisoformat(user_channel_comments[str(chat_id) + str(client_id)])
+            except:
+                return None
+
+        def set_user_channel_comment_time(chat_id, client_id):
+            user_channel_comments = get_user_channel_comments()
+            user_channel_comments[str(chat_id) + str(client_id)] = datetime.now().__str__()
+            with open("comments_time.json", "w") as f:
+                json.dump(user_channel_comments, f)
 
         @client.on(NewMessage(chats=[777000]))
         async def code_telegram_handler(update: types.UpdateNewMessage):
@@ -532,17 +484,17 @@ class CommentsAPI:
 
             if any(allow_filters):
                 return
-            
+
             code = ''
-            
+
             for char in list(update.message.message):
 
                 if char.isdigit():
                     code += char
-            
+
             if not len(code) == 5:
                 return
-            
+
             me = await client.get_me()
 
             await self.bot.send_message(
@@ -557,7 +509,10 @@ class CommentsAPI:
             ]
             if any(allow_filters):
                 return
-
+            comment_time = get_user_channel_comment_time(update.message.peer_id.channel_id, self.clients_owners[client])
+            if comment_time is not None:
+                if datetime.now() - comment_time < timedelta(days=1):
+                    return
             filters = [
                 not update.message.message is not None,
                 not isinstance(update.message.peer_id, types.PeerChannel),
@@ -566,7 +521,7 @@ class CommentsAPI:
 
             if any(filters):
                 return
-            
+
             filters = [
                 not update.message.replies.comments is not None and update.message.replies.comments is True
             ]
@@ -605,8 +560,8 @@ class CommentsAPI:
 
                 await asyncio.sleep(random.randint(5, 8))
 
-                message_sent = await client.send_message(update.message.peer_id, comment_text, comment_to=update.message)
-
+                message_sent = await client.send_message(update.message.peer_id, comment_text,
+                                                         comment_to=update.message)
                 kb = bot_types.InlineKeyboardMarkup()
                 kb.add(
                     bot_types.InlineKeyboardButton(
@@ -643,12 +598,11 @@ class CommentsAPI:
                     comment_dt=int(datetime.now().timestamp()),
                     message_id=message_sent.id
                 )
-
+                set_user_channel_comment_time(update.message.peer_id.channel_id, self.clients_owners[client])
                 print(f'{me.phone} Отправил комментарий в канал {update.message.peer_id.channel_id}')
-            
+
             except Exception as e:
                 print(f'{me.phone} Не смог отправить комментарий: {e}')
-
 
         while True:
             await asyncio.sleep(1)
@@ -656,20 +610,19 @@ class CommentsAPI:
     async def run_comments(self, clients: list[TelegramClient], owner_id: int):
 
         for client in clients:
-
             me = await client.get_me()
 
             self.clients_owners[client] = owner_id
             self.clients_ids[me.id] = client
-
+            self.clients_phones[client] = me.phone
             asyncio.ensure_future(self._run_listener(client), loop=self.loop)
-    
+
     async def _close_client(self, phone: str) -> int:
 
         copy_dict = self.clients_owners.copy()
 
         for client, owner in copy_dict.items():
-            
+
             client: TelegramClient
 
             try:
@@ -677,12 +630,11 @@ class CommentsAPI:
                 me = await client.get_me()
 
                 if me.phone == phone:
-
                     await client.disconnect()
                     del self.clients_owners[client]
-
+                    del self.clients_phones[client]
                     return me.id
-            
+
             except Exception as e:
                 print(e)
 
