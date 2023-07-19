@@ -103,14 +103,14 @@ class CommentsAPI:
         try:
             me = await client.get_me()
             if not me:
-                remove_accounts(self.clients_owners[client], "accounts/tl/" + self.clients_phones[client])
+                remove_accounts(self.clients_owners[client], "accounts/tl/" + self.clients_phones[client] + ".session")
                 await self._close_client(self.clients_phones[client])
                 await self.bot.send_message(
                     chat_id=self.clients_owners[client],
                     text=f'Аккаунт <b>{self.clients_phones[client]}</b> удален', )
                 return False
         except:
-            remove_accounts(self.clients_owners[client], "accounts/tl/" + self.clients_phones[client])
+            remove_accounts(self.clients_owners[client], "accounts/tl/" + self.clients_phones[client] + ".session")
             await self._close_client(self.clients_phones[client])
             await self.bot.send_message(
                 chat_id=self.clients_owners[client],
@@ -558,7 +558,7 @@ class CommentsAPI:
             me = await client.get_me()
             try:
 
-                await asyncio.sleep(random.randint(5, 8))
+                await asyncio.sleep(random.randint(120, 180))
 
                 message_sent = await client.send_message(update.message.peer_id, comment_text,
                                                          comment_to=update.message)
@@ -569,12 +569,12 @@ class CommentsAPI:
                         callback_data=f'rcomm|{me.id}|{message_sent.peer_id.channel_id}|{message_sent.id}'
                     )
                 )
-                # kb.add(
-                #     bot_types.InlineKeyboardButton(
-                #         text='✏️ Редактировать комментарий',
-                #         callback_data=f'ecomm|{me.id}|{message_sent.peer_id.channel_id}|{message_sent.id}'
-                #     )
-                # )
+                kb.add(
+                    bot_types.InlineKeyboardButton(
+                        text='✏️ Редактировать комментарий',
+                        callback_data=f'ecomm|{me.id}|{message_sent.peer_id.channel_id}|{message_sent.id}'
+                    )
+                )
 
                 channel_uname = await self.get_channel_uname(
                     client=client,
@@ -587,11 +587,11 @@ class CommentsAPI:
                     reply_markup=kb
                 )
 
-                # self._write_comment_cache(
-                #     owner_id=self.clients_owners[client],
-                #     channel_id=update.message.peer_id.channel_id,
-                #     dt=int(datetime.now().timestamp())
-                # )
+                self._write_comment_cache(
+                    owner_id=self.clients_owners[client],
+                    channel_id=update.message.peer_id.channel_id,
+                    dt=int(datetime.now().timestamp())
+                )
                 add_comment(
                     owner_id=self.clients_owners[client],
                     channel_id=update.message.peer_id.channel_id,

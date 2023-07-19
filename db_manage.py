@@ -164,7 +164,8 @@ def remove_accounts(user_id: int, account_path: str):
         user_data["accounts"]["td"].remove(account_path)
     
     elif "tl" in account_path:
-        user_data["accounts"]["tl"].remove(account_path)
+        if account_path in user_data["accounts"]["tl"]:
+            user_data["accounts"]["tl"].remove(account_path)
     
     User.update(accounts=json.dumps(user_data["accounts"])).where(User.user_id == user_data["user_id"]).execute()
 
