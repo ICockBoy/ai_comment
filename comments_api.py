@@ -21,6 +21,8 @@ import kb
 import random
 import dbm
 
+from utils import close_client
+
 
 class CommentsAPI:
 
@@ -103,18 +105,18 @@ class CommentsAPI:
         try:
             me = await client.get_me()
             if not me:
-                remove_accounts(self.clients_owners[client], "accounts/tl/" + self.clients_phones[client] + ".session")
+                await close_client(self.clients_owners[client], self.clients_phones[client])
                 await self._close_client(self.clients_phones[client])
                 await self.bot.send_message(
                     chat_id=self.clients_owners[client],
                     text=f'Аккаунт <b>{self.clients_phones[client]}</b> удален', )
                 return False
         except:
-            remove_accounts(self.clients_owners[client], "accounts/tl/" + self.clients_phones[client] + ".session")
+            await close_client(self.clients_owners[client], self.clients_phones[client])
             await self._close_client(self.clients_phones[client])
             await self.bot.send_message(
                 chat_id=self.clients_owners[client],
-                text=f'Аккаунт <b>{self.clients_phones[client]}</b> удален', )
+                text=f'Аккаунт <b>{self.clients_phones[client]}</b> удален')
             return False
         else:
             return True
