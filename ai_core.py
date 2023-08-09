@@ -1,5 +1,5 @@
 import nltk
-
+import asyncio
 from nltk.tokenize import sent_tokenize
 from nltk.corpus import stopwords
 from heapq import nlargest
@@ -97,8 +97,8 @@ class CommentGenerator:
                 api_key=token,
                 timeout=20,
                 payload={
-                    "model": "text-davinci-001",
-                    "prompt": f'Напиши комментарий на русском с добавлением емоджи на русском языке с похвалой и благодарностью на пост «{post_text}»',
+                    "model": "text-davinci-003",
+                    "prompt": f'Reply to the post by imitating a human response. Your reply should be written in Russian and contain no more than 20 words. Below is the text of the post: {post_text}',
                     "max_tokens": 512,
                     "n": 1,
                     "stop": None
@@ -111,9 +111,11 @@ class CommentGenerator:
             if response["error"]["type"] == "insufficient_quota" or response['error']['code'] == 'invalid_api_key':
                 return None
             else:
-                return False
+                await asyncio.sleep(180)
+                return await self.generate_comment(post_text, token)
         answer = response['choices'][0]['text'].strip()
-
+        if detect(answer) != "ru":
+            return await self.generate_comment(post_text, token)
         # good_filters = [
         #     detect(answer) == 'ru',
         #     not self._cache_is_key_exists(answer),

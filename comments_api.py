@@ -17,11 +17,9 @@ from aiogram import Bot, types as bot_types
 from config import *
 from db_manage import *
 import kb
-
+from init_clients import module_clients_api
 import random
 import dbm
-
-from utils import close_client
 
 
 class CommentsAPI:
@@ -105,15 +103,21 @@ class CommentsAPI:
         try:
             me = await client.get_me()
             if not me:
-                await close_client(self.clients_owners[client], self.clients_phones[client])
-                await self._close_client(self.clients_phones[client])
+                account_id = await self._close_client(self.clients_phones[client])
+                remove_accounts(
+                    user_id=self.clients_owners[client],
+                    account_path=module_clients_api.str_sess[account_id]
+                )
                 await self.bot.send_message(
                     chat_id=self.clients_owners[client],
                     text=f'Аккаунт <b>{self.clients_phones[client]}</b> удален', )
                 return False
         except:
-            await close_client(self.clients_owners[client], self.clients_phones[client])
-            await self._close_client(self.clients_phones[client])
+            account_id = await self._close_client(self.clients_phones[client])
+            remove_accounts(
+                user_id=self.clients_owners[client],
+                account_path=module_clients_api.str_sess[account_id]
+            )
             await self.bot.send_message(
                 chat_id=self.clients_owners[client],
                 text=f'Аккаунт <b>{self.clients_phones[client]}</b> удален')
@@ -541,18 +545,19 @@ class CommentsAPI:
                 )
                 if comment_text is False:
                     continue
-                if comment_text is not None:
+                elif comment_text is not None:
                     break
                 else:
                     api_tokens.remove(_token)
             else:
-                try:
-                    await self.bot.send_message(
-                        chat_id=self.clients_owners[client],
-                        text="Закончились токены для ChatGpt, поэтому комментарий не был отправлен, пожалуйста, добавьте новый токен."
-                    )
-                except:
-                    pass
+                if len(api_tokens) == 0:
+                    try:
+                        await self.bot.send_message(
+                            chat_id=self.clients_owners[client],
+                            text="Закончились токены для ChatGpt, поэтому комментарий не был отправлен, пожалуйста, добавьте новый токен."
+                        )
+                    except:
+                        pass
                 set_user_tokens(self.clients_owners[client], api_tokens)
                 return
             set_user_tokens(self.clients_owners[client], api_tokens)

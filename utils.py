@@ -7,13 +7,11 @@ import asyncio
 
 from db_manage import *
 
-from clients_api import ClientsAPI
-from comments_api import CommentsAPI
+from init_comments import module_comments_api
+from init_clients import module_clients_api
 
 from payments import Payments
 
-module_clients_api = ClientsAPI()
-module_comments_api = CommentsAPI()
 payments_api = Payments()
 
 

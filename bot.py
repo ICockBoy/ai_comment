@@ -93,6 +93,25 @@ async def new_tokens(message: types.Message, state: FSMContext):
     tokens_all = get_user_tokens(message.chat.id)
     tokens = message.text.split()
     for token in tokens:
+        try:
+            import openai_async
+            response = await openai_async.complete(
+                    api_key=token,
+                    timeout=20,
+                    payload={
+                        "model": "text-davinci-003",
+                        "prompt": f'Напиши любые два слова',
+                        "max_tokens": 512,
+                        "n": 1,
+                        "stop": None
+                    },
+                )
+            response = response.json()
+            if "error" in response:
+                if response["error"]["type"] == "insufficient_quota" or response['error']['code'] == 'invalid_api_key':
+                    continue
+        except:
+            continue
         if token.startswith("sk-") and token.count("sk-") == 1:
             tokens_all.append(token)
     set_user_tokens(message.chat.id, tokens_all)
@@ -1166,9 +1185,6 @@ async def m_account_handler(call: types.CallbackQuery, state: FSMContext):
         )
     )
 
-    if len(r['channels']) > 20:
-        r['channels'] = r['channels'][:20]
-
     if r['photo']:
 
         await bot.send_photo(
@@ -1178,8 +1194,8 @@ async def m_account_handler(call: types.CallbackQuery, state: FSMContext):
                     f"Имя: {r['first_name']}\n" +
                     f"Фамилия: {r['last_name']}\n" +
                     f"Описание: {r['about']}\n\n" +
-                    f"<b>Список каналов:</b>\n\n" +
-                    '\n'.join([f'<i>{channel}</i>' for channel in r['channels']]),
+                    f"Юзернейм: @{r['username']}\n" +
+                    f"<b>Список каналов:</b> {len(r['channels'])}",
             reply_markup=kb
         )
 
@@ -1191,10 +1207,10 @@ async def m_account_handler(call: types.CallbackQuery, state: FSMContext):
                  f"Имя: {r['first_name']}\n" +
                  f"Фамилия: {r['last_name']}\n" +
                  f"Описание: {r['about']}\n\n" +
-                 f"<b>Список каналов:</b>\n\n" +
-                 '\n'.join([f'<i>{channel}</i>' for channel in r['channels']]),
+                 f"Юзернейм: @{r['username']}\n" +
+                 f"<b>Список каналов:</b> {len(r['channels'])}",
             reply_markup=kb
-        )
+        )   
 
 @dp.message_handler(commands=['admin'], state='*')
 async def admin_command_handler(message: types.Message, state: FSMContext):
