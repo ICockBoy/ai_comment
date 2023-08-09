@@ -25,13 +25,6 @@ class ClientsAPI:
 
     def __init__(self):
 
-        self.proxy = {
-            "proxy_type": "socks5",
-            "addr": "127.0.0.1",
-            "port": 9050,
-            "rdns": True
-        }
-
         self.auth_code_data = {
 
         }
@@ -60,49 +53,6 @@ class ClientsAPI:
 
         session_file = f'accounts/tl/{phone}.session'
 
-        # proxy = self.proxy
-
-        # proxy['username'] = f"{random.randint(10000, 2147483647)}"
-        # proxy['password'] = '1'
-
-        # proxy = {
-        #     "proxy_type": "socks5",
-        #     "addr": "lproxy.site",
-        #     "port": 14295,
-        #     "username": "yG2YC2",
-        #     "password": "tyN7As6ADYT2",
-        #     "rdns": True
-        # }
-
-        # proxy = {
-        #     "proxy_type": "socks5",
-        #     "addr": "lproxy.site",
-        #     "port": 14295,
-        #     "username": "bmo",
-        #     "password": "123456",
-        #     "rdns": True
-        # }
-
-        # proxy = {
-        #     "proxy_type": "socks5",
-        #     "addr": "145.249.253.32",
-        #     "port": 52059,
-        #     "username": "pr34serv1mart",
-        #     "password": "Ki49Fad2",
-        #     "rdns": True
-        # }
-
-        # socks5://185.241.192.80:14321:duRDUM:PUh9edgAq9Ap
-
-        # proxy = {
-        #     "proxy_type": "socks5",
-        #     "addr": "185.241.192.80",
-        #     "port": 14321,
-        #     "username": "duRDUM",
-        #     "password": "PUh9edgAq9Ap",
-        #     "rdns": True
-        # }
-
         # proxy = {
         #     "proxy_type": "http",
         #     "addr": "cproxy.site",
@@ -116,21 +66,8 @@ class ClientsAPI:
 
         client = TelegramClient(
             session=session_file,
-            api=api,
-            # proxy=proxy
+            api=api
         )
-
-        # str_sess = StringSession.save(client.session)
-
-        # client = TelegramClient(
-        #     session=StringSession(str_sess),
-        #     api=api,
-        #     request_retries=20,
-        #     connection_retries=20,
-        #     retry_delay=20,
-        #     timeout=20,
-        #     proxy=proxy
-        # )
 
         await client.connect()
 
@@ -330,14 +267,6 @@ class ClientsAPI:
                 api.lang_pack = 'ru-RU'
                 api.system_lang_code = 'ru-RU'
 
-                proxy = {
-                    "proxy_type": "socks5",
-                    "addr": "185.241.192.80",
-                    "port": 14321,
-                    "username": "duRDUM",
-                    "password": "PUh9edgAq9Ap",
-                    "rdns": True
-                }
 
                 client = TelegramClient(
                     session=session,
@@ -354,7 +283,7 @@ class ClientsAPI:
                     connection_retries=20,
                     retry_delay=20,
                     timeout=20,
-                    proxy=proxy
+                    # proxy=proxy
                 )
             
             except Exception as e:
