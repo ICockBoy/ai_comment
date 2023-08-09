@@ -25,12 +25,12 @@ class ClientsAPI:
 
     def __init__(self):
 
-        # self.proxy = {
-        #     "proxy_type": "socks5",
-        #     "addr": "127.0.0.1",
-        #     "port": 9050,
-        #     "rdns": True
-        # }
+        self.proxy = {
+            "proxy_type": "socks5",
+            "addr": "127.0.0.1",
+            "port": 9050,
+            "rdns": True
+        }
 
         self.auth_code_data = {
 
@@ -116,7 +116,8 @@ class ClientsAPI:
 
         client = TelegramClient(
             session=session_file,
-            api=api
+            api=api,
+            proxy=proxy
         )
 
         # str_sess = StringSession.save(client.session)
