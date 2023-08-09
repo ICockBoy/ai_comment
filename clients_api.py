@@ -116,8 +116,7 @@ class ClientsAPI:
 
         client = TelegramClient(
             session=session_file,
-            api=api,
-            proxy=proxy
+            api=api
         )
 
         # str_sess = StringSession.save(client.session)

@@ -1,0 +1,29 @@
+ИНСТРУКЦИЯ ДЛЯ СКАЧИВАНИЯ АККАУНТОВ
+-------------------------------
+
+https://disk.yandex.ru/d/3KKwGSv0ML-Adw - MEGA Link Downloader
+Либо с официального сайта - https://www.softpedia.com/get/Internet/Download-Managers/MEGA-Link-Downloader.shtml
+
+Нажимаем Add links, добавляем ссылки из купленного текстового файла.
+Далее в окне где появились файлы правой кнопкой мыши - Select All Single file
+Во вкладке "Settings - Download Directory" указываем папку куда будут качаться все файлы.
+
+Альтернативный загрузчик
+https://disk.yandex.ru/d/8ShvL4X18fMJcQ
+
+Софт для перемещения всех файлов из папок в одну папку
+https://www.majorgeeks.com/files/details/folder_merger.html - Folder Merger 1.8 
+
+
+
+ИНСТРУКЦИЯ ДЛЯ TDATA
+-------------------------------
+
+В каждую папку помещаем 'Telegram.exe' и запускаем аккаунт/ы.
+Актуальный 'Telegram.exe' по ссылке с официального сайта - https://desktop.telegram.org/
+
+ИНСТРУКЦИЯ ДЛЯ SESSION
+-------------------------------
+
+Нужен специальный софт, в который их можно загрузить.
+К примеру TG-giant и другие, которые поддерживают данный тип файлов.
