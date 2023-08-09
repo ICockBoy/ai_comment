@@ -94,14 +94,14 @@ class ClientsAPI:
 
         # socks5://185.241.192.80:14321:duRDUM:PUh9edgAq9Ap
 
-        proxy = {
-            "proxy_type": "socks5",
-            "addr": "185.241.192.80",
-            "port": 14321,
-            "username": "duRDUM",
-            "password": "PUh9edgAq9Ap",
-            "rdns": True
-        }
+        # proxy = {
+        #     "proxy_type": "socks5",
+        #     "addr": "185.241.192.80",
+        #     "port": 14321,
+        #     "username": "duRDUM",
+        #     "password": "PUh9edgAq9Ap",
+        #     "rdns": True
+        # }
 
         # proxy = {
         #     "proxy_type": "http",
@@ -263,7 +263,7 @@ class ClientsAPI:
                     session=None,
                     flag=UseCurrentSession,
                     api=tdesk.api,
-                    proxy=proxy
+                    # proxy=proxy
                 )
 
                 await client.connect()
@@ -342,7 +342,7 @@ class ClientsAPI:
                 client = TelegramClient(
                     session=session,
                     api=api,
-                    proxy=proxy
+                    # proxy=proxy
                 )
 
                 str_sess = StringSession.save(client.session)
